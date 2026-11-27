@@ -23,6 +23,10 @@ class AdminAiSettingsController extends Controller
             'clear_gemini_api_key' => ['sometimes', 'boolean'],
             'gemini_model' => ['sometimes', 'nullable', 'string', 'max:120'],
             'gemini_image_model' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'openai_api_key' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'clear_openai_api_key' => ['sometimes', 'boolean'],
+            'openai_model' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'openai_image_model' => ['sometimes', 'nullable', 'string', 'max:120'],
         ]);
 
         $aiConfig->persistAdminSettings($validated);

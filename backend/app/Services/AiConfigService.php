@@ -41,9 +41,51 @@ class AiConfigService
         return (string) config('services.gemini.image_model', 'gemini-2.5-flash-image');
     }
 
+    public function openAiApiKey(): ?string
+    {
+        $fromDb = AppSetting::getValue('openai_api_key');
+
+        if ($fromDb !== null && $fromDb !== '') {
+            return $fromDb;
+        }
+
+        $fromEnv = config('services.openai.api_key');
+
+        return is_string($fromEnv) && $fromEnv !== '' ? $fromEnv : null;
+    }
+
+    public function openAiModel(): string
+    {
+        $fromDb = AppSetting::getValue('openai_model');
+
+        if ($fromDb !== null && $fromDb !== '') {
+            return $fromDb;
+        }
+
+        return (string) config('services.openai.model', 'gpt-4o-mini');
+    }
+
+    public function openAiImageModel(): string
+    {
+        $fromDb = AppSetting::getValue('openai_image_model');
+
+        if ($fromDb !== null && $fromDb !== '') {
+            return $fromDb;
+        }
+
+        return (string) config('services.openai.image_model', 'dall-e-3');
+    }
+
     public function apiKeySource(): string
     {
         $fromDb = AppSetting::getValue('gemini_api_key');
+
+        return $fromDb !== null && $fromDb !== '' ? 'database' : 'env';
+    }
+
+    public function openAiApiKeySource(): string
+    {
+        $fromDb = AppSetting::getValue('openai_api_key');
 
         return $fromDb !== null && $fromDb !== '' ? 'database' : 'env';
     }
@@ -69,12 +111,20 @@ class AiConfigService
     {
         $apiKey = $this->geminiApiKey();
 
+        $openAiKey = $this->openAiApiKey();
+
         return [
             'gemini_api_key_masked' => $this->maskSecret($apiKey),
             'gemini_api_key_configured' => $apiKey !== null && $apiKey !== '',
             'gemini_api_key_source' => $this->apiKeySource(),
             'gemini_model' => $this->geminiModel(),
             'gemini_image_model' => $this->geminiImageModel(),
+            'openai_api_key_masked' => $this->maskSecret($openAiKey),
+            'openai_api_key_configured' => $openAiKey !== null && $openAiKey !== '',
+            'openai_api_key_source' => $this->openAiApiKeySource(),
+            'openai_model' => $this->openAiModel(),
+            'openai_image_model' => $this->openAiImageModel(),
+            'openai_backup_enabled' => $openAiKey !== null && $openAiKey !== '',
         ];
     }
 
@@ -97,6 +147,22 @@ class AiConfigService
 
         if (array_key_exists('gemini_image_model', $validated) && $validated['gemini_image_model'] !== null) {
             AppSetting::setValue('gemini_image_model', $validated['gemini_image_model']);
+        }
+
+        if (array_key_exists('openai_api_key', $validated) && $validated['openai_api_key'] !== null) {
+            AppSetting::setValue('openai_api_key', $validated['openai_api_key']);
+        }
+
+        if (array_key_exists('clear_openai_api_key', $validated) && $validated['clear_openai_api_key']) {
+            AppSetting::setValue('openai_api_key', null);
+        }
+
+        if (array_key_exists('openai_model', $validated) && $validated['openai_model'] !== null) {
+            AppSetting::setValue('openai_model', $validated['openai_model']);
+        }
+
+        if (array_key_exists('openai_image_model', $validated) && $validated['openai_image_model'] !== null) {
+            AppSetting::setValue('openai_image_model', $validated['openai_image_model']);
         }
     }
 }

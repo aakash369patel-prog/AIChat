@@ -41,4 +41,10 @@ return [
         'image_model' => env('GEMINI_IMAGE_MODEL', 'gemini-2.5-flash-image'),
     ],
 
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+        'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
+        'image_model' => env('OPENAI_IMAGE_MODEL', 'dall-e-3'),
+    ],
+
 ];

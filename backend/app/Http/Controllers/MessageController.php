@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Conversation;
-use App\Services\GeminiService;
+use App\Services\AiChatService;
 use App\Services\UsageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,7 +17,7 @@ class MessageController extends Controller
     public function store(
         Request $request,
         Conversation $conversation,
-        GeminiService $gemini,
+        AiChatService $aiChat,
         UsageService $usage,
     ): JsonResponse {
         if ($conversation->user_id !== $request->user()->id) {
@@ -101,7 +101,7 @@ class MessageController extends Controller
                     throw new RuntimeException('Create image mode accepts image attachments only.');
                 }
 
-                $image = $gemini->generateImage(
+                $image = $aiChat->generateImage(
                     $content,
                     $attachmentBase64 ? $attachmentMime : null,
                     $attachmentBase64,
@@ -122,7 +122,7 @@ class MessageController extends Controller
                     ->where('content_type', 'text')
                     ->orderBy('created_at')
                     ->get();
-                $assistantText = $gemini->generateReply($history);
+                $assistantText = $aiChat->generateReply($history);
 
                 $assistantMessage = $conversation->messages()->create([
                     'role' => 'assistant',
@@ -134,7 +134,7 @@ class MessageController extends Controller
             return response()->json([
                 'message' => $mode === 'image'
                     ? 'Failed to generate an image.'
-                    : 'Failed to get a response from Gemini.',
+                    : 'Failed to get a response from the AI provider.',
                 'error' => $e->getMessage(),
                 'user_message' => $userMessage,
             ], 502);

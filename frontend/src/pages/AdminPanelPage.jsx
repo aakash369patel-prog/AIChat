@@ -285,7 +285,11 @@ function AiSettingsSection() {
   const [geminiApiKey, setGeminiApiKey] = useState('')
   const [geminiModel, setGeminiModel] = useState('')
   const [geminiImageModel, setGeminiImageModel] = useState('')
+  const [openaiApiKey, setOpenaiApiKey] = useState('')
+  const [openaiModel, setOpenaiModel] = useState('')
+  const [openaiImageModel, setOpenaiImageModel] = useState('')
   const [clearKey, setClearKey] = useState(false)
+  const [clearOpenaiKey, setClearOpenaiKey] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -296,6 +300,8 @@ function AiSettingsSection() {
     setSettings(s)
     setGeminiModel(s.gemini_model || '')
     setGeminiImageModel(s.gemini_image_model || '')
+    setOpenaiModel(s.openai_model || '')
+    setOpenaiImageModel(s.openai_image_model || '')
   }, [])
 
   useEffect(() => {
@@ -311,15 +317,23 @@ function AiSettingsSection() {
       const body = {
         gemini_model: geminiModel,
         gemini_image_model: geminiImageModel,
+        openai_model: openaiModel,
+        openai_image_model: openaiImageModel,
         clear_gemini_api_key: clearKey,
+        clear_openai_api_key: clearOpenaiKey,
       }
       if (geminiApiKey.trim()) {
         body.gemini_api_key = geminiApiKey.trim()
       }
+      if (openaiApiKey.trim()) {
+        body.openai_api_key = openaiApiKey.trim()
+      }
       const res = await api.put('/admin/settings/ai', body)
       setSettings(res.data.settings)
       setGeminiApiKey('')
+      setOpenaiApiKey('')
       setClearKey(false)
+      setClearOpenaiKey(false)
       setMessage('AI credentials saved. Chat will use these settings immediately.')
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save settings.')
@@ -330,10 +344,11 @@ function AiSettingsSection() {
 
   return (
     <section className="max-w-xl rounded-2xl border border-[var(--chat-border)] bg-[var(--chat-surface)] p-6">
-      <h2 className="mb-1 text-lg font-medium text-white">Gemini credentials</h2>
+      <h2 className="mb-1 text-lg font-medium text-white">AI credentials</h2>
       <p className="mb-6 text-sm text-slate-400">
-        Database values override <code className="text-slate-300">.env</code>. Leave API key blank to keep the
-        current key.
+        Gemini is used first. If the key is missing, quota is exhausted, or the request fails with auth or rate
+        limits, chat automatically falls back to OpenAI when a backup key is set. Database values override{' '}
+        <code className="text-slate-300">.env</code>. Leave API keys blank to keep the current keys.
       </p>
 
       {settings && (
@@ -370,8 +385,38 @@ function AiSettingsSection() {
           <input type="checkbox" checked={clearKey} onChange={(e) => setClearKey(e.target.checked)} />
           Remove database key (fall back to .env)
         </label>
-        <Field label="Chat model" value={geminiModel} onChange={setGeminiModel} />
-        <Field label="Image model" value={geminiImageModel} onChange={setGeminiImageModel} />
+        <Field label="Gemini chat model" value={geminiModel} onChange={setGeminiModel} />
+        <Field label="Gemini image model" value={geminiImageModel} onChange={setGeminiImageModel} />
+
+        <div className="border-t border-slate-700 pt-4">
+          <h3 className="mb-3 text-sm font-medium text-violet-200">OpenAI backup</h3>
+          {settings && (
+            <p className="mb-3 text-sm text-slate-300">
+              Backup key:{' '}
+              {settings.openai_api_key_configured ? settings.openai_api_key_masked : 'Not set'} (
+              {settings.openai_api_key_source})
+              {settings.openai_backup_enabled ? ' — auto-fallback enabled' : ''}
+            </p>
+          )}
+          <div className="mb-3">
+            <label className="mb-1 block text-sm text-slate-300">OpenAI API key</label>
+            <input
+              type="password"
+              value={openaiApiKey}
+              onChange={(e) => setOpenaiApiKey(e.target.value)}
+              placeholder="sk-… (backup when Gemini fails)"
+              className={inputClass}
+              autoComplete="off"
+            />
+          </div>
+          <label className="mb-3 flex items-center gap-2 text-sm text-slate-300">
+            <input type="checkbox" checked={clearOpenaiKey} onChange={(e) => setClearOpenaiKey(e.target.checked)} />
+            Remove database OpenAI key (fall back to .env)
+          </label>
+          <Field label="OpenAI chat model" value={openaiModel} onChange={setOpenaiModel} />
+          <Field label="OpenAI image model" value={openaiImageModel} onChange={setOpenaiImageModel} />
+        </div>
+
         <button
           type="submit"
           disabled={saving}

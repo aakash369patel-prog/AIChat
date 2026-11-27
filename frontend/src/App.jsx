@@ -8,6 +8,7 @@ import AdminRoute from './components/AdminRoute'
 import AdminPanelPage from './pages/AdminPanelPage'
 import PaymentPlansPage from './pages/PaymentPlansPage'
 import RegisterPage from './pages/RegisterPage'
+import PageSeo from './components/PageSeo'
 
 function PublicOnly({ children }) {
   const { isAuthenticated, loading } = useAuth()
@@ -27,6 +28,7 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
       <BrowserRouter>
+        <PageSeo />
         <Routes>
           <Route
             path="/login"
