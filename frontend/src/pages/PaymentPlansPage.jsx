@@ -42,10 +42,10 @@ export default function PaymentPlansPage() {
       <div className="mx-auto max-w-5xl">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-emerald-400">Gemini paid access</p>
+            <p className="text-sm font-medium text-emerald-400">Paid access</p>
             <h1 className="mt-1 text-3xl font-semibold text-white">Choose your plan</h1>
             <p className="mt-2 max-w-2xl text-sm text-slate-400">
-              Plans mirror Google Gemini paid tiers. All prices are in Indian Rupees (INR) and
+              Pick the tier that fits how you chat. All prices are in Indian Rupees (INR) and
               include a {markupPercent}% platform fee on the base amount.
             </p>
           </div>
@@ -59,7 +59,11 @@ export default function PaymentPlansPage() {
 
         {user?.is_subscribed && (
           <div className="mb-6 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
-            You are on plan: <strong>{user.subscribed_plan}</strong>.
+            You are on plan:{' '}
+            <strong>
+              {plans.find((p) => p.id === user.subscribed_plan)?.name ?? user.subscribed_plan}
+            </strong>
+            .
           </div>
         )}
 

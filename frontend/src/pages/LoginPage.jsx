@@ -31,10 +31,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-full items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 px-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-xl backdrop-blur">
+    <div className="flex min-h-full items-center justify-center bg-[var(--chat-bg)] px-4">
+      <div className="w-full max-w-md rounded-2xl border border-[var(--chat-border)] bg-[var(--chat-surface)] p-8 shadow-2xl shadow-black/40">
         <h1 className="mb-2 text-2xl font-semibold text-white">AI Chat Board</h1>
-        <p className="mb-6 text-sm text-slate-400">Sign in to continue chatting with Gemini</p>
+        <p className="mb-6 text-sm text-slate-400">Sign in to continue chatting</p>
 
         {from === '/' && (
           <p className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">

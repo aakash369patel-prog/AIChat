@@ -23,6 +23,7 @@ export default function ChatDashboard() {
   const [usage, setUsage] = useState(null)
   const [creditModalOpen, setCreditModalOpen] = useState(false)
   const [chatMode, setChatMode] = useState('chat')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const activeConversation = conversations.find((c) => c.id === activeId)
 
@@ -235,7 +236,7 @@ export default function ChatDashboard() {
   }
 
   return (
-    <div className="flex h-full min-h-screen bg-slate-900">
+    <div className="flex h-full min-h-screen bg-[var(--chat-bg)]">
       <Sidebar
         conversations={loadingList ? [] : conversations}
         activeId={activeId}
@@ -246,6 +247,8 @@ export default function ChatDashboard() {
         user={user}
         onLogout={logout}
         isGuest={!isAuthenticated}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
       <ChatPanel
         messages={messages}
@@ -261,6 +264,7 @@ export default function ChatDashboard() {
         guestMode={!isAuthenticated}
         mode={chatMode}
         onModeChange={setChatMode}
+        onOpenSidebar={() => setSidebarOpen(true)}
       />
       <CreditLimitModal
         open={creditModalOpen}

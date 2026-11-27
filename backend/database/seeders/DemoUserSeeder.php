@@ -14,10 +14,23 @@ class DemoUserSeeder extends Seeder
         $password = self::DEMO_PASSWORD;
 
         User::query()->updateOrCreate(
+            ['email' => 'admin@aichat.local'],
+            [
+                'name' => 'Admin',
+                'password' => $password,
+                'is_admin' => true,
+                'is_subscribed' => true,
+                'subscribed_plan' => 'gemini_pro',
+                'subscribed_at' => now(),
+            ],
+        );
+
+        User::query()->updateOrCreate(
             ['email' => 'demo@aichat.local'],
             [
                 'name' => 'Demo Free User',
                 'password' => $password,
+                'is_admin' => false,
                 'is_subscribed' => false,
                 'subscribed_plan' => null,
                 'subscribed_at' => null,
@@ -29,6 +42,7 @@ class DemoUserSeeder extends Seeder
             [
                 'name' => 'Demo Starter',
                 'password' => $password,
+                'is_admin' => false,
                 'is_subscribed' => true,
                 'subscribed_plan' => 'gemini_starter',
                 'subscribed_at' => now(),
@@ -40,6 +54,7 @@ class DemoUserSeeder extends Seeder
             [
                 'name' => 'Demo Pro',
                 'password' => $password,
+                'is_admin' => false,
                 'is_subscribed' => true,
                 'subscribed_plan' => 'gemini_pro',
                 'subscribed_at' => now(),

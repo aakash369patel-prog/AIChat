@@ -11,10 +11,14 @@ use RuntimeException;
 
 class GeminiService
 {
+    public function __construct(
+        private readonly AiConfigService $aiConfig,
+    ) {}
+
     public function generateReply(Collection $messages): string
     {
-        $apiKey = config('services.gemini.api_key');
-        $model = config('services.gemini.model', 'gemini-2.0-flash');
+        $apiKey = $this->aiConfig->geminiApiKey();
+        $model = $this->aiConfig->geminiModel();
 
         if (empty($apiKey)) {
             throw new RuntimeException('Gemini API key is not configured.');
@@ -62,8 +66,8 @@ class GeminiService
         ?string $referenceMime = null,
         ?string $referenceBase64 = null,
     ): array {
-        $apiKey = config('services.gemini.api_key');
-        $model = config('services.gemini.image_model', 'gemini-2.5-flash-image');
+        $apiKey = $this->aiConfig->geminiApiKey();
+        $model = $this->aiConfig->geminiImageModel();
 
         if (empty($apiKey)) {
             throw new RuntimeException('Gemini API key is not configured.');
