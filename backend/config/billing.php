@@ -11,7 +11,7 @@ return [
     'plans' => [
         [
             'id' => 'gemini_starter',
-            'name' => 'Gemini Starter',
+            'name' => 'Starter',
             'description' => 'Paid chat access with a monthly prompt allowance. No image generation.',
             'base_price_inr' => 1699,
             'billing_period' => 'month',
@@ -21,8 +21,8 @@ return [
         ],
         [
             'id' => 'gemini_pro',
-            'name' => 'Gemini Pro',
-            'description' => 'Advanced Gemini models with extended context for power users.',
+            'name' => 'Pro',
+            'description' => 'Advanced models with extended context for power users.',
             'base_price_inr' => 4199,
             'billing_period' => 'month',
             'prompts_included' => 'Unlimited chat, images + priority models',
@@ -31,8 +31,8 @@ return [
         ],
         [
             'id' => 'gemini_team',
-            'name' => 'Gemini Team',
-            'description' => 'Team workspace with shared quotas on Google AI paid infrastructure.',
+            'name' => 'Team',
+            'description' => 'Team workspace with shared quotas and collaboration features.',
             'base_price_inr' => 8399,
             'billing_period' => 'month',
             'prompts_included' => 'Unlimited team chat, images (up to 5 seats)',

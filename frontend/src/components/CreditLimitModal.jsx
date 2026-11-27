@@ -27,8 +27,8 @@ export default function CreditLimitModal({ open, onClose, usage }) {
           Credit limit reached
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-slate-300">
-          You have used your <strong className="text-white">{limit} free Gemini prompts</strong>.
-          Upgrade to a paid plan (Google AI–style tiers + 20% platform fee) to keep chatting.
+          You have used your <strong className="text-white">{limit} free prompts</strong>. Upgrade to a
+          paid plan to keep chatting.
         </p>
         {usage && (
           <p className="mt-2 text-xs text-slate-500">

@@ -21,12 +21,14 @@ export default function ChatPanel({
   guestMode,
   mode,
   onModeChange,
+  onOpenSidebar,
 }) {
   const [input, setInput] = useState('')
   const [attachment, setAttachment] = useState(null)
   const [attachmentPreview, setAttachmentPreview] = useState(null)
   const bottomRef = useRef(null)
   const fileInputRef = useRef(null)
+  const textareaRef = useRef(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -37,6 +39,13 @@ export default function ChatPanel({
       onModeChange?.('chat')
     }
   }, [usage?.allows_image, mode, onModeChange])
+
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 200)}px`
+  }, [input])
 
   const clearAttachment = () => {
     if (attachmentPreview) {
@@ -78,176 +87,236 @@ export default function ChatPanel({
 
   const isImageMode = mode === 'image'
   const canSubmit = Boolean(input.trim() || attachment)
+  const inputDisabled = !guestMode && (sending || usage?.credit_limit_reached)
 
   return (
-    <main className="flex min-w-0 flex-1 flex-col bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950">
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 bg-slate-900/50 px-6 py-4 backdrop-blur-sm">
-        <h2 className="truncate text-lg font-semibold tracking-tight text-white">
-          {conversationTitle || 'Select or start a chat'}
+    <main className="flex min-w-0 flex-1 flex-col bg-[var(--chat-bg)]">
+      <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-[var(--chat-border-subtle)] bg-[var(--chat-bg)]/90 px-3 py-3 backdrop-blur-md md:px-5">
+        <button
+          type="button"
+          onClick={onOpenSidebar}
+          className="rounded-lg p-2 text-[var(--chat-text-muted)] transition hover:bg-[var(--chat-surface-elevated)] hover:text-white md:hidden"
+          aria-label="Open sidebar"
+        >
+          <MenuIcon className="h-5 w-5" />
+        </button>
+        <h2 className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--chat-text)] md:text-base">
+          {conversationTitle || 'New conversation'}
         </h2>
-        {usage && usage.prompts_limit != null && (
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <span>
-              {usage.is_subscribed ? 'Chat prompts' : 'Free prompts'}: {usage.prompts_used} /{' '}
-              {usage.prompts_limit}
-            </span>
-            {usage.credit_limit_reached ? (
-              <button
-                type="button"
-                onClick={onUpgradeClick}
-                className="rounded-md bg-amber-600/20 px-2 py-1 text-amber-300 hover:bg-amber-600/30"
-              >
-                Upgrade
-              </button>
-            ) : null}
-          </div>
+        {usage && usage.prompts_limit != null && !usage.is_unlimited && (
+          <UsagePill usage={usage} onUpgradeClick={onUpgradeClick} />
         )}
         {usage?.is_unlimited && (
-          <span className="rounded-md bg-emerald-600/20 px-2 py-1 text-xs text-emerald-300">
+          <span className="hidden rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-medium text-emerald-300 sm:inline">
             {usage.plan_name || 'Pro'} · Unlimited
           </span>
         )}
       </header>
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
+      <div className="chat-scroll flex-1 overflow-y-auto">
         {loading && (
-          <div className="flex justify-center py-12">
+          <div className="flex justify-center py-16">
             <ThinkingDots label="Loading messages" />
           </div>
         )}
 
         {!loading && messages.length === 0 && (
-          <div className="mx-auto flex max-w-2xl flex-col items-center px-4 pt-8 text-center">
-            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-600/20 ring-1 ring-emerald-500/30">
-              <GeminiIcon className="h-8 w-8 text-emerald-400" />
-            </div>
-            <h3 className="text-2xl font-semibold text-white">How can I help you today?</h3>
-            <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-400">
-              {guestMode
-                ? 'Type a message and send — you will be asked to sign in first.'
-                : 'Ask anything — explanations, writing, code, ideas, and more.'}
-            </p>
-            {!isImageMode && (
-              <div className="mt-8 grid w-full gap-2 sm:grid-cols-2">
-                {SUGGESTIONS.map((text) => (
-                  <button
-                    key={text}
-                    type="button"
-                    onClick={() => setInput(text)}
-                    className="rounded-xl border border-slate-700/80 bg-slate-800/40 px-4 py-3 text-left text-sm text-slate-300 transition hover:border-emerald-500/40 hover:bg-slate-800/80 hover:text-white"
-                  >
-                    {text}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <EmptyState
+            guestMode={guestMode}
+            isImageMode={isImageMode}
+            onPickSuggestion={setInput}
+          />
         )}
 
-        <div className="mx-auto max-w-3xl space-y-8">
-          {messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
-          ))}
+        {messages.length > 0 && (
+          <div className="mx-auto w-full max-w-3xl px-4 py-6 md:px-6">
+            {messages.map((message) => (
+              <MessageRow key={message.id} message={message} />
+            ))}
 
-          {sending && (
-            <div className="flex items-start gap-3">
-              <AssistantAvatar />
-              <div className="rounded-2xl border border-slate-700/60 bg-slate-800/50 px-4 py-3 shadow-lg shadow-black/20">
-                <ThinkingDots label={isImageMode ? 'Generating image' : 'Gemini is thinking'} />
+            {sending && (
+              <div className="animate-message-in flex gap-4 py-4">
+                <AssistantAvatar />
+                <div className="flex min-h-[2.5rem] items-center pt-1">
+                  <ThinkingDots label={isImageMode ? 'Generating image' : 'Thinking'} />
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          <div ref={bottomRef} />
-        </div>
+            <div ref={bottomRef} className="h-2" />
+          </div>
+        )}
       </div>
 
-      {error && (
-        <div className="mx-4 mb-2 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-300 md:mx-8">
-          {error}
-        </div>
-      )}
-
-      <form
-        onSubmit={handleSubmit}
-        className="border-t border-slate-800/80 bg-slate-900/80 p-4 backdrop-blur-md md:p-6"
-      >
-        <div className="mx-auto mb-3 flex max-w-3xl gap-2">
-          <ModeToggle
-            mode={mode}
-            onChange={onModeChange}
-            disabled={sending}
-            allowsImage={usage?.allows_image !== false}
-          />
-        </div>
-        {attachment && (
-          <div className="mx-auto mb-2 flex max-w-3xl items-center gap-3 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-300">
-            {attachmentPreview ? (
-              <img
-                src={attachmentPreview}
-                alt=""
-                className="h-10 w-10 rounded object-cover"
-              />
-            ) : (
-              <span className="flex h-10 w-10 items-center justify-center rounded bg-slate-800 text-lg">
-                📎
-              </span>
-            )}
-            <span className="min-w-0 flex-1 truncate">{attachment.name}</span>
-            <button
-              type="button"
-              onClick={clearAttachment}
-              className="text-slate-400 hover:text-white"
-              aria-label="Remove attachment"
-            >
-              ✕
-            </button>
+      <footer className="shrink-0 px-3 pb-4 pt-2 md:px-6 md:pb-6">
+        {error && (
+          <div className="mx-auto mb-2 max-w-3xl rounded-xl border border-red-500/35 bg-red-500/10 px-4 py-2.5 text-sm text-red-300">
+            {error}
           </div>
         )}
-        <div className="mx-auto flex max-w-3xl gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            accept={isImageMode ? 'image/*' : 'image/*,application/pdf'}
-            onChange={handleFileChange}
-          />
-          <button
-            type="button"
-            disabled={!guestMode && (sending || usage?.credit_limit_reached)}
-            onClick={() => fileInputRef.current?.click()}
-            className="flex min-h-[44px] items-center justify-center rounded-xl border border-slate-700 bg-slate-950 px-4 text-slate-300 transition hover:border-emerald-500 hover:text-white disabled:opacity-50"
-            title="Attach file"
-            aria-label="Attach file"
-          >
-            📎
-          </button>
-          <textarea
-            rows={1}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                handleSubmit(e)
+
+        <form onSubmit={handleSubmit} className="mx-auto max-w-3xl">
+          <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
+            <ModeToggle
+              mode={mode}
+              onChange={onModeChange}
+              disabled={sending}
+              allowsImage={usage?.allows_image !== false}
+            />
+            {usage?.credit_limit_reached && (
+              <button
+                type="button"
+                onClick={onUpgradeClick}
+                className="text-xs font-medium text-amber-400 hover:text-amber-300"
+              >
+                Upgrade to continue →
+              </button>
+            )}
+          </div>
+
+          {attachment && (
+            <AttachmentChip
+              attachment={attachment}
+              preview={attachmentPreview}
+              onClear={clearAttachment}
+            />
+          )}
+
+          <div className="flex items-end gap-1 rounded-[1.75rem] border border-[var(--chat-border)] bg-[var(--chat-surface-elevated)] p-2 shadow-[var(--composer-shadow)] transition focus-within:border-emerald-500/40">
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              accept={isImageMode ? 'image/*' : 'image/*,application/pdf'}
+              onChange={handleFileChange}
+            />
+            <button
+              type="button"
+              disabled={inputDisabled}
+              onClick={() => fileInputRef.current?.click()}
+              className="mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--chat-text-muted)] transition hover:bg-zinc-700/60 hover:text-white disabled:opacity-40"
+              title="Attach file"
+              aria-label="Attach file"
+            >
+              <PaperclipIcon className="h-5 w-5" />
+            </button>
+            <textarea
+              ref={textareaRef}
+              rows={1}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  handleSubmit(e)
+                }
+              }}
+              placeholder={
+                isImageMode ? 'Describe the image you want…' : 'Send a message…'
               }
-            }}
-            placeholder={
-              isImageMode ? 'Describe the image you want to create...' : 'Message Gemini...'
-            }
-            disabled={!guestMode && (sending || usage?.credit_limit_reached)}
-            className="max-h-40 min-h-[44px] flex-1 resize-y rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white shadow-inner shadow-black/20 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60"
-          />
-          <button
-            type="submit"
-            disabled={(!guestMode && (sending || usage?.credit_limit_reached)) || !canSubmit}
-            className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-3 font-medium text-white shadow-lg shadow-emerald-900/30 transition hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50"
-          >
-            {isImageMode ? 'Create' : 'Send'}
-          </button>
-        </div>
-      </form>
+              disabled={inputDisabled}
+              className="max-h-[200px] min-h-[2.25rem] flex-1 resize-none bg-transparent py-2 pl-1 pr-2 text-[0.9375rem] leading-relaxed text-[var(--chat-text)] outline-none placeholder:text-[var(--chat-text-muted)] disabled:opacity-50"
+            />
+            <button
+              type="submit"
+              disabled={inputDisabled || !canSubmit}
+              className="mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white transition hover:bg-emerald-500 disabled:bg-zinc-700 disabled:text-zinc-500"
+              aria-label={isImageMode ? 'Create image' : 'Send message'}
+            >
+              <SendIcon className="h-4 w-4" />
+            </button>
+          </div>
+
+          <p className="mt-2 px-2 text-center text-[10px] text-[var(--chat-text-muted)]">
+            AI responses can be inaccurate. Verify important information.
+          </p>
+        </form>
+      </footer>
     </main>
+  )
+}
+
+function UsagePill({ usage, onUpgradeClick }) {
+  const atLimit = usage.credit_limit_reached
+  return (
+    <div className="flex items-center gap-2 text-[11px] text-[var(--chat-text-muted)]">
+      <span className="hidden sm:inline">
+        {usage.is_subscribed ? 'Prompts' : 'Free'}: {usage.prompts_used}/{usage.prompts_limit}
+      </span>
+      {atLimit ? (
+        <button
+          type="button"
+          onClick={onUpgradeClick}
+          className="rounded-full bg-amber-500/15 px-2 py-0.5 font-medium text-amber-300 hover:bg-amber-500/25"
+        >
+          Upgrade
+        </button>
+      ) : (
+        <span className="inline-flex h-1.5 w-16 overflow-hidden rounded-full bg-zinc-800 sm:hidden">
+          <span
+            className="h-full rounded-full bg-emerald-500"
+            style={{
+              width: `${Math.min(100, (usage.prompts_used / usage.prompts_limit) * 100)}%`,
+            }}
+          />
+        </span>
+      )}
+    </div>
+  )
+}
+
+function EmptyState({ guestMode, isImageMode, onPickSuggestion }) {
+  return (
+    <div className="mx-auto flex min-h-[min(70vh,32rem)] max-w-2xl flex-col items-center justify-center px-6 py-12 text-center">
+      <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/15 to-teal-600/15 ring-1 ring-emerald-500/25">
+        <AppIcon className="h-7 w-7 text-emerald-400" />
+      </div>
+      <h3 className="text-2xl font-semibold tracking-tight text-[var(--chat-text)]">
+        How can I help you today?
+      </h3>
+      <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--chat-text-muted)]">
+        {guestMode
+          ? 'Try the composer below — you’ll be asked to sign in when you send.'
+          : 'Ask for explanations, drafts, code, brainstorming, or image ideas.'}
+      </p>
+      {!isImageMode && (
+        <div className="mt-10 grid w-full gap-2 sm:grid-cols-2">
+          {SUGGESTIONS.map((text) => (
+            <button
+              key={text}
+              type="button"
+              onClick={() => onPickSuggestion(text)}
+              className="rounded-2xl border border-[var(--chat-border)] bg-[var(--chat-surface)] px-4 py-3.5 text-left text-sm text-[var(--chat-text-muted)] transition hover:border-emerald-500/35 hover:bg-[var(--chat-surface-elevated)] hover:text-[var(--chat-text)]"
+            >
+              {text}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AttachmentChip({ attachment, preview, onClear }) {
+  return (
+    <div className="mb-2 flex items-center gap-3 rounded-xl border border-[var(--chat-border)] bg-[var(--chat-surface)] px-3 py-2 text-xs text-[var(--chat-text-muted)]">
+      {preview ? (
+        <img src={preview} alt="" className="h-9 w-9 rounded-lg object-cover" />
+      ) : (
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-800">
+          <PaperclipIcon className="h-4 w-4" />
+        </span>
+      )}
+      <span className="min-w-0 flex-1 truncate">{attachment.name}</span>
+      <button
+        type="button"
+        onClick={onClear}
+        className="rounded-lg p-1 hover:bg-zinc-700 hover:text-white"
+        aria-label="Remove attachment"
+      >
+        <CloseIcon className="h-4 w-4" />
+      </button>
+    </div>
   )
 }
 
@@ -258,17 +327,17 @@ function ModeToggle({ mode, onChange, disabled, allowsImage }) {
   }
 
   return (
-    <div className="inline-flex rounded-lg border border-slate-700 bg-slate-950 p-1 text-xs">
+    <div className="inline-flex rounded-full border border-[var(--chat-border)] bg-[var(--chat-surface)] p-0.5 text-[11px]">
       {options.map((opt) => (
         <button
           key={opt.id}
           type="button"
           disabled={disabled}
           onClick={() => onChange?.(opt.id)}
-          className={`rounded-md px-3 py-1.5 font-medium transition-colors disabled:opacity-50 ${
+          className={`rounded-full px-3 py-1 font-medium transition disabled:opacity-50 ${
             mode === opt.id
-              ? 'bg-emerald-600 text-white'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'text-[var(--chat-text-muted)] hover:text-[var(--chat-text)]'
           }`}
         >
           {opt.label}
@@ -278,65 +347,53 @@ function ModeToggle({ mode, onChange, disabled, allowsImage }) {
   )
 }
 
-function AssistantAvatar() {
-  return (
-    <div
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/25 to-teal-600/25 ring-1 ring-emerald-500/40"
-      aria-hidden
-    >
-      <GeminiIcon className="h-5 w-5 text-emerald-400" />
-    </div>
-  )
-}
-
-function UserAvatar() {
-  return (
-    <div
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-sm font-semibold text-white shadow-md shadow-emerald-900/40"
-      aria-hidden
-    >
-      You
-    </div>
-  )
-}
-
-function GeminiIcon({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5L12 2Z"
-        fill="currentColor"
-        opacity="0.9"
-      />
-      <path
-        d="M18 14L18.75 17L21.5 17.75L18.75 18.5L18 21.5L17.25 18.5L14.5 17.75L17.25 17L18 14Z"
-        fill="currentColor"
-        opacity="0.6"
-      />
-    </svg>
-  )
-}
-
-function ThinkingDots({ label }) {
-  return (
-    <div className="flex items-center gap-2 text-sm text-emerald-300/90">
-      <span className="flex gap-1">
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className="h-2 w-2 animate-bounce rounded-full bg-emerald-400"
-            style={{ animationDelay: `${i * 150}ms` }}
-          />
-        ))}
-      </span>
-      <span>{label}…</span>
-    </div>
-  )
-}
-
-function MessageBubble({ message }) {
+function MessageRow({ message }) {
   const isUser = message.role === 'user'
-  const isImage = !isUser && message.content_type === 'image' && message.image_url
+  if (isUser) {
+    return <UserMessage message={message} />
+  }
+  return <AssistantMessage message={message} />
+}
+
+function UserMessage({ message }) {
+  const textContent =
+    message.content && message.content !== '[Attachment]'
+      ? message.content
+      : message.content === '[Attachment]' && !message.attachment_url
+        ? message.content
+        : null
+
+  return (
+    <div className="animate-message-in flex justify-end gap-3 py-3">
+      <div className="max-w-[min(85%,36rem)] rounded-[1.25rem] rounded-br-md bg-[var(--chat-surface-elevated)] px-4 py-3 text-[0.9375rem] leading-relaxed text-[var(--chat-text)] ring-1 ring-[var(--chat-border-subtle)]">
+        {message.attachment_url && (
+          <div className="mb-2">
+            {message.attachment_mime?.startsWith('image/') ? (
+              <img
+                src={message.attachment_url}
+                alt="Attached"
+                className="max-h-52 rounded-lg object-contain"
+              />
+            ) : (
+              <a
+                href={message.attachment_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-emerald-400 underline"
+              >
+                View attachment
+              </a>
+            )}
+          </div>
+        )}
+        {textContent && <p className="whitespace-pre-wrap">{textContent}</p>}
+      </div>
+    </div>
+  )
+}
+
+function AssistantMessage({ message }) {
+  const isImage = message.content_type === 'image' && message.image_url
   const [copied, setCopied] = useState(false)
 
   const textContent =
@@ -357,69 +414,80 @@ function MessageBubble({ message }) {
     }
   }
 
-  if (isUser) {
-    return (
-      <div className="flex justify-end gap-3">
-        <div className="group max-w-[min(85%,42rem)]">
-          <div className="rounded-2xl rounded-br-md bg-gradient-to-br from-emerald-600 to-teal-700 px-4 py-3 text-sm leading-relaxed text-white shadow-lg shadow-emerald-950/30">
-            {message.attachment_url && (
-              <div className="mb-2">
-                {message.attachment_mime?.startsWith('image/') ? (
-                  <img
-                    src={message.attachment_url}
-                    alt="Attached"
-                    className="max-h-48 rounded-lg object-contain ring-1 ring-white/20"
-                  />
-                ) : (
-                  <a
-                    href={message.attachment_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline text-emerald-100"
-                  >
-                    View attachment
-                  </a>
-                )}
+  return (
+    <div className="group animate-message-in flex gap-3 border-b border-[var(--chat-border-subtle)]/50 py-5 last:border-b-0">
+      <AssistantAvatar />
+      <div className="relative min-w-0 flex-1 pt-0.5">
+        {isImage ? (
+          <ImageMessageContent message={message} />
+        ) : (
+          <>
+            {message.attachment_url && <AttachmentBlock message={message} />}
+            {textContent && (
+              <div className="chat-prose text-[var(--chat-text)]">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{textContent}</ReactMarkdown>
               </div>
             )}
-            {textContent && <p className="whitespace-pre-wrap">{textContent}</p>}
-          </div>
-        </div>
-        <UserAvatar />
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex items-start gap-3">
-      <AssistantAvatar />
-      <div className="group relative min-w-0 max-w-[min(85%,42rem)] flex-1">
-        <div className="rounded-2xl rounded-bl-md border border-slate-700/50 bg-slate-800/60 px-4 py-3 shadow-lg shadow-black/25 backdrop-blur-sm">
-          {isImage ? (
-            <ImageMessageContent message={message} />
-          ) : (
-            <>
-              {message.attachment_url && (
-                <AttachmentBlock message={message} />
-              )}
-              {textContent && (
-                <div className="chat-prose text-sm text-slate-100">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{textContent}</ReactMarkdown>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+          </>
+        )}
         {!isImage && textContent && (
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="absolute -right-1 top-0 rounded-lg border border-slate-700 bg-slate-900/90 px-2 py-1 text-xs text-slate-400 opacity-0 transition group-hover:opacity-100 hover:text-white focus:opacity-100"
-          >
-            {copied ? 'Copied!' : 'Copy'}
-          </button>
+          <div className="mt-2 flex gap-1 opacity-0 transition group-hover:opacity-100">
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-[var(--chat-text-muted)] hover:bg-[var(--chat-surface-elevated)] hover:text-white"
+            >
+              <CopyIcon className="h-3.5 w-3.5" />
+              {copied ? 'Copied' : 'Copy'}
+            </button>
+          </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function AssistantAvatar() {
+  return (
+    <div
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-600/20 ring-1 ring-emerald-500/25"
+      aria-hidden
+    >
+      <AppIcon className="h-4 w-4 text-emerald-400" />
+    </div>
+  )
+}
+
+function AppIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5L12 2Z"
+        fill="currentColor"
+        opacity="0.9"
+      />
+      <path
+        d="M18 14L18.75 17L21.5 17.75L18.75 18.5L18 21.5L17.25 18.5L14.5 17.75L17.25 17L18 14Z"
+        fill="currentColor"
+        opacity="0.6"
+      />
+    </svg>
+  )
+}
+
+function ThinkingDots({ label }) {
+  return (
+    <div className="flex items-center gap-2.5 text-sm text-emerald-400/90">
+      <span className="flex gap-1">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-400"
+            style={{ animationDelay: `${i * 140}ms` }}
+          />
+        ))}
+      </span>
+      <span className="text-[var(--chat-text-muted)]">{label}…</span>
     </div>
   )
 }
@@ -430,10 +498,10 @@ function ImageMessageContent({ message }) {
       <img
         src={message.image_url}
         alt={message.content || 'Generated image'}
-        className="max-h-96 w-full rounded-xl object-contain ring-1 ring-slate-600/50"
+        className="max-h-[28rem] w-full rounded-xl object-contain ring-1 ring-[var(--chat-border)]"
       />
       {message.content && message.content !== '[Attachment]' && (
-        <p className="text-xs text-slate-400">{message.content}</p>
+        <p className="text-xs text-[var(--chat-text-muted)]">{message.content}</p>
       )}
     </div>
   )
@@ -446,7 +514,7 @@ function AttachmentBlock({ message }) {
         <img
           src={message.attachment_url}
           alt="Attached"
-          className="max-h-48 rounded-lg object-contain ring-1 ring-slate-600/50"
+          className="max-h-48 rounded-lg object-contain ring-1 ring-[var(--chat-border)]"
         />
       ) : (
         <a
@@ -459,5 +527,53 @@ function AttachmentBlock({ message }) {
         </a>
       )}
     </div>
+  )
+}
+
+function MenuIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  )
+}
+
+function PaperclipIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32a2.25 2.25 0 11-3.182-3.182L13.473 7.286"
+      />
+    </svg>
+  )
+}
+
+function SendIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M3.478 2.404a.75.75 0 00-.926.941l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.404z" />
+    </svg>
+  )
+}
+
+function CloseIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  )
+}
+
+function CopyIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.849-1.547 1.26-2.666 1.26h-3c-1.12 0-2.312-.411-2.666-1.26m0 0a2.25 2.25 0 00-2.115-1.47M6.75 15.75v1.5a2.25 2.25 0 002.25 2.25h6a2.25 2.25 0 002.25-2.25v-1.5m-9 0V9.75a2.25 2.25 0 012.25-2.25h6a2.25 2.25 0 012.25 2.25v6"
+      />
+    </svg>
   )
 }

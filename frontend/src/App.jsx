@@ -3,6 +3,8 @@ import ProtectedRoute from './components/ProtectedRoute'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import ChatDashboard from './pages/ChatDashboard'
 import LoginPage from './pages/LoginPage'
+import AdminRoute from './components/AdminRoute'
+import AdminPanelPage from './pages/AdminPanelPage'
 import PaymentPlansPage from './pages/PaymentPlansPage'
 import RegisterPage from './pages/RegisterPage'
 
@@ -45,6 +47,14 @@ export default function App() {
               <ProtectedRoute>
                 <PaymentPlansPage />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminPanelPage />
+              </AdminRoute>
             }
           />
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminAccountController;
+use App\Http\Controllers\Admin\AdminAiSettingsController;
+use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\AuthenticationController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\ConversationController;
@@ -24,4 +27,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/conversations/{conversation}', [ConversationController::class, 'destroy']);
 
     Route::post('/conversations/{conversation}/messages', [MessageController::class, 'store']);
+
+    Route::middleware('admin')->prefix('admin')->group(function () {
+        Route::get('/account', [AdminAccountController::class, 'show']);
+        Route::patch('/account', [AdminAccountController::class, 'update']);
+
+        Route::get('/users', [AdminUserController::class, 'index']);
+        Route::post('/users', [AdminUserController::class, 'store']);
+        Route::patch('/users/{user}', [AdminUserController::class, 'update']);
+        Route::delete('/users/{user}', [AdminUserController::class, 'destroy']);
+
+        Route::get('/settings/ai', [AdminAiSettingsController::class, 'show']);
+        Route::put('/settings/ai', [AdminAiSettingsController::class, 'update']);
+    });
 });
