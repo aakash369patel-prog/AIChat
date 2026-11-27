@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ThemeToggle from '../components/ThemeToggle'
+import { BrandLockup } from '../components/BrandLogo'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -40,8 +41,10 @@ export default function LoginPage() {
         className="w-full max-w-md rounded-2xl border border-[var(--chat-border)] bg-[var(--chat-surface)] p-8"
         style={{ boxShadow: 'var(--chat-card-shadow)' }}
       >
-        <h1 className="mb-2 text-2xl font-semibold text-[var(--chat-text)]">AI Chat Board</h1>
-        <p className="mb-6 text-sm text-[var(--chat-text-muted)]">Sign in to continue chatting</p>
+        <div className="mb-6">
+          <BrandLockup size="lg" layout="stacked" showTagline className="mb-1" />
+          <p className="text-sm text-[var(--chat-text-muted)]">Sign in to continue chatting</p>
+        </div>
 
         {from === '/' && (
           <p className="mb-4 rounded-lg border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-sm text-violet-200">

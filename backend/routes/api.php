@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminAccountController;
 use App\Http\Controllers\Admin\AdminAiSettingsController;
+use App\Http\Controllers\Admin\AdminUserActivityController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\AuthenticationController;
 use App\Http\Controllers\BillingController;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('/register', [AuthenticationController::class, 'register']);
 Route::post('/login', [AuthenticationController::class, 'login']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::post('/logout', [AuthenticationController::class, 'logout']);
     Route::get('/me', [AuthenticationController::class, 'me']);
     Route::get('/usage', [UsageController::class, 'show']);
@@ -39,5 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/settings/ai', [AdminAiSettingsController::class, 'show']);
         Route::put('/settings/ai', [AdminAiSettingsController::class, 'update']);
+
+        Route::get('/user-activity', [AdminUserActivityController::class, 'index']);
     });
 });

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { BrandMark } from './BrandLogo'
 
 const SUGGESTIONS = [
   'Explain quantum computing in simple terms',
@@ -268,9 +269,7 @@ function UsagePill({ usage, onUpgradeClick }) {
 function EmptyState({ guestMode, isImageMode, onPickSuggestion }) {
   return (
     <div className="mx-auto flex min-h-[min(70vh,32rem)] max-w-2xl flex-col items-center justify-center px-6 py-12 text-center">
-      <div className="brand-icon-wrap mb-6 flex h-14 w-14 items-center justify-center rounded-2xl">
-        <AppIcon className="h-7 w-7 text-violet-400" />
-      </div>
+      <BrandMark size="lg" className="mb-6" />
       <h3 className="text-2xl font-semibold tracking-tight text-[var(--chat-text)]">
         How can I help you today?
       </h3>
@@ -448,31 +447,7 @@ function AssistantMessage({ message }) {
 }
 
 function AssistantAvatar() {
-  return (
-    <div
-      className="brand-icon-wrap flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-      aria-hidden
-    >
-      <AppIcon className="h-4 w-4 text-violet-400" />
-    </div>
-  )
-}
-
-function AppIcon({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5L12 2Z"
-        fill="currentColor"
-        opacity="0.9"
-      />
-      <path
-        d="M18 14L18.75 17L21.5 17.75L18.75 18.5L18 21.5L17.25 18.5L14.5 17.75L17.25 17L18 14Z"
-        fill="currentColor"
-        opacity="0.6"
-      />
-    </svg>
-  )
+  return <BrandMark size="sm" />
 }
 
 function ThinkingDots({ label }) {

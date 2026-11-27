@@ -19,6 +19,7 @@ class User extends Authenticatable
         'email',
         'password',
         'is_admin',
+        'is_active',
         'is_subscribed',
         'subscribed_plan',
         'subscribed_at',
@@ -36,6 +37,7 @@ class User extends Authenticatable
             'subscribed_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'is_active' => 'boolean',
             'is_subscribed' => 'boolean',
         ];
     }

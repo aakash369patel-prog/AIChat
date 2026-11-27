@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ThemeToggle from '../components/ThemeToggle'
+import { BrandLockup } from '../components/BrandLogo'
+import { brand } from '../brand'
 
 export default function RegisterPage() {
   const { register } = useAuth()
@@ -38,8 +40,11 @@ export default function RegisterPage() {
         className="w-full max-w-md rounded-2xl border border-[var(--chat-border)] bg-[var(--chat-surface)] p-8"
         style={{ boxShadow: 'var(--chat-card-shadow)' }}
       >
-        <h1 className="mb-2 text-2xl font-semibold text-[var(--chat-text)]">Create account</h1>
-        <p className="mb-6 text-sm text-[var(--chat-text-muted)]">Join AI Chat Board</p>
+        <div className="mb-6">
+          <BrandLockup size="lg" layout="stacked" showTagline className="mb-2" />
+          <h1 className="text-xl font-semibold text-[var(--chat-text)]">Create account</h1>
+          <p className="mt-1 text-sm text-[var(--chat-text-muted)]">Join {brand.name}</p>
+        </div>
 
         {error && (
           <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">

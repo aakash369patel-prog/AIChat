@@ -1,13 +1,12 @@
+import { brand } from '../brand'
+
 /** Public site URL for canonical/OG links (set in frontend `.env`). */
 export const siteUrl = (import.meta.env.VITE_SITE_URL || 'https://your-domain.com').replace(
   /\/$/,
   '',
 )
 
-export const brand = {
-  name: 'AI Chat Board',
-  tagline: 'AI chatbot & Gemini assistant online',
-}
+export { brand }
 
 /**
  * High-intent / trending terms (2025–2026): conversational AI, ai chat online,

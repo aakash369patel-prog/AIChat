@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import ThemeToggle from './ThemeToggle'
+import { BrandLockup } from './BrandLogo'
 
 export default function Sidebar({
   conversations,
@@ -59,10 +60,7 @@ export default function Sidebar({
         }`}
       >
         <div className="flex items-center gap-2 border-b border-[var(--chat-border-subtle)] px-3 py-3">
-          <BrandMark />
-          <span className="truncate text-sm font-semibold tracking-tight text-[var(--chat-text)]">
-            AI Chat
-          </span>
+          <BrandLockup size="sm" className="min-w-0 flex-1" />
           <button
             type="button"
             onClick={onClose}
@@ -196,31 +194,6 @@ function SectionLabel({ label }) {
         {label}
       </span>
     </div>
-  )
-}
-
-function BrandMark() {
-  return (
-    <div className="brand-icon-wrap flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
-      <AppIcon className="h-4 w-4 text-violet-400" />
-    </div>
-  )
-}
-
-function AppIcon({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5L12 2Z"
-        fill="currentColor"
-        opacity="0.9"
-      />
-      <path
-        d="M18 14L18.75 17L21.5 17.75L18.75 18.5L18 21.5L17.25 18.5L14.5 17.75L17.25 17L18 14Z"
-        fill="currentColor"
-        opacity="0.6"
-      />
-    </svg>
   )
 }
 

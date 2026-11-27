@@ -47,6 +47,12 @@ class AuthenticationController extends Controller
             ]);
         }
 
+        if (! $user->is_active) {
+            throw ValidationException::withMessages([
+                'email' => ['This account has been deactivated. Contact an administrator.'],
+            ]);
+        }
+
         $user->tokens()->delete();
         $token = $user->createToken('auth-token')->plainTextToken;
 

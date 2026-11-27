@@ -36,6 +36,7 @@ class AdminUserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
             'is_admin' => ['sometimes', 'boolean'],
+            'is_active' => ['sometimes', 'boolean'],
             'is_subscribed' => ['sometimes', 'boolean'],
             'subscribed_plan' => ['nullable', 'string', 'max:64'],
         ]);
@@ -45,6 +46,7 @@ class AdminUserController extends Controller
             'email' => $validated['email'],
             'password' => $validated['password'],
             'is_admin' => $validated['is_admin'] ?? false,
+            'is_active' => $validated['is_active'] ?? true,
             'is_subscribed' => $validated['is_subscribed'] ?? false,
             'subscribed_plan' => $validated['subscribed_plan'] ?? null,
             'subscribed_at' => ($validated['is_subscribed'] ?? false) ? now() : null,
@@ -60,12 +62,17 @@ class AdminUserController extends Controller
             'email' => ['sometimes', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'password' => ['sometimes', 'nullable', 'string', 'min:8'],
             'is_admin' => ['sometimes', 'boolean'],
+            'is_active' => ['sometimes', 'boolean'],
             'is_subscribed' => ['sometimes', 'boolean'],
             'subscribed_plan' => ['nullable', 'string', 'max:64'],
         ]);
 
         if (array_key_exists('is_admin', $validated) && ! $validated['is_admin'] && $user->id === $request->user()->id) {
             return response()->json(['message' => 'You cannot remove your own admin role.'], 422);
+        }
+
+        if (array_key_exists('is_active', $validated) && ! $validated['is_active'] && $user->id === $request->user()->id) {
+            return response()->json(['message' => 'You cannot deactivate your own account.'], 422);
         }
 
         if (array_key_exists('name', $validated)) {
@@ -82,6 +89,14 @@ class AdminUserController extends Controller
 
         if (array_key_exists('is_admin', $validated)) {
             $user->is_admin = $validated['is_admin'];
+        }
+
+        if (array_key_exists('is_active', $validated)) {
+            $wasActive = $user->is_active;
+            $user->is_active = $validated['is_active'];
+            if ($wasActive && ! $validated['is_active']) {
+                $user->tokens()->delete();
+            }
         }
 
         if (array_key_exists('is_subscribed', $validated)) {

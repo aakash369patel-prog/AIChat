@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import api from '../api/axios'
 import { useAuth } from '../context/AuthContext'
 import ThemeToggle from '../components/ThemeToggle'
+import { BrandLockup } from '../components/BrandLogo'
 
 export default function PaymentPlansPage() {
   const navigate = useNavigate()
@@ -44,6 +45,7 @@ export default function PaymentPlansPage() {
         <ThemeToggle />
       </div>
       <div className="mx-auto max-w-5xl">
+        <BrandLockup size="md" showTagline className="mb-8" />
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-sm font-medium text-violet-500">Paid access</p>
