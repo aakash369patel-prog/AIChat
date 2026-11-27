@@ -41,4 +41,10 @@ return [
         'image_model' => env('GEMINI_IMAGE_MODEL', 'gemini-2.5-flash-image'),
     ],
 
+    'razorpay' => [
+        'key_id' => env('RAZORPAY_KEY_ID'),
+        'key_secret' => env('RAZORPAY_KEY_SECRET'),
+        'webhook_secret' => env('RAZORPAY_WEBHOOK_SECRET'),
+    ],
+
 ];

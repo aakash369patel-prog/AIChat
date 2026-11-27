@@ -32,7 +32,9 @@ export default function RegisterPage() {
     <div className="flex min-h-full items-center justify-center bg-[var(--chat-bg)] px-4">
       <div className="w-full max-w-md rounded-2xl border border-[var(--chat-border)] bg-[var(--chat-surface)] p-8 shadow-2xl shadow-black/40">
         <h1 className="mb-2 text-2xl font-semibold text-white">Create account</h1>
-        <p className="mb-6 text-sm text-slate-400">Join AI Chat Board</p>
+        <p className="mb-6 text-sm text-slate-400">
+          Join AI Chat Board. We&apos;ll send a verification email after signup (check spam if needed).
+        </p>
 
         {error && (
           <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">

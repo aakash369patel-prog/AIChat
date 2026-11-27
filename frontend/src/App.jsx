@@ -7,6 +7,10 @@ import AdminRoute from './components/AdminRoute'
 import AdminPanelPage from './pages/AdminPanelPage'
 import PaymentPlansPage from './pages/PaymentPlansPage'
 import RegisterPage from './pages/RegisterPage'
+import UsageDashboardPage from './pages/UsageDashboardPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
+import EmailVerifiedPage from './pages/EmailVerifiedPage'
 
 function PublicOnly({ children }) {
   const { isAuthenticated, loading } = useAuth()
@@ -40,12 +44,23 @@ export default function App() {
               </PublicOnly>
             }
           />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/email-verified" element={<EmailVerifiedPage />} />
           <Route path="/" element={<ChatDashboard />} />
           <Route
             path="/plans"
             element={
               <ProtectedRoute>
                 <PaymentPlansPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/usage"
+            element={
+              <ProtectedRoute>
+                <UsageDashboardPage />
               </ProtectedRoute>
             }
           />

@@ -13,6 +13,11 @@ export default function Sidebar({
   isGuest,
   open,
   onClose,
+  chatSearch,
+  onChatSearchChange,
+  onChatSearchSubmit,
+  searchLoading,
+  streakDays,
 }) {
   const [editingId, setEditingId] = useState(null)
   const [editTitle, setEditTitle] = useState('')
@@ -82,6 +87,27 @@ export default function Sidebar({
             New chat
           </button>
         </div>
+
+        {!isGuest && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              onChatSearchSubmit?.()
+            }}
+            className="px-3 pb-2"
+          >
+            <input
+              type="search"
+              value={chatSearch}
+              onChange={(e) => onChatSearchChange?.(e.target.value)}
+              placeholder="Search chats…"
+              className="w-full rounded-xl border border-[var(--chat-border)] bg-[var(--chat-bg)] px-3 py-2 text-sm text-white outline-none placeholder:text-[var(--chat-text-muted)] focus:border-emerald-500/50"
+            />
+            {searchLoading && (
+              <p className="mt-1 px-1 text-[10px] text-[var(--chat-text-muted)]">Searching…</p>
+            )}
+          </form>
+        )}
 
         <SectionLabel label="Chats" />
 
@@ -153,9 +179,18 @@ export default function Sidebar({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-[var(--chat-text)]">{user?.name}</p>
-                  <p className="truncate text-xs text-[var(--chat-text-muted)]">{user?.email}</p>
+                  <p className="truncate text-xs text-[var(--chat-text-muted)]">
+                    {user?.email}
+                    {streakDays > 0 ? ` · 🔥 ${streakDays}d streak` : ''}
+                  </p>
                 </div>
               </div>
+              <Link
+                to="/usage"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--chat-border)] py-2 text-xs font-medium text-[var(--chat-text-muted)] transition hover:border-emerald-500/40 hover:text-emerald-300"
+              >
+                Usage dashboard
+              </Link>
               <Link
                 to="/plans"
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--chat-border)] py-2 text-xs font-medium text-[var(--chat-text-muted)] transition hover:border-emerald-500/40 hover:text-emerald-300"

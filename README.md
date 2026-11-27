@@ -57,9 +57,14 @@ API base URL: `http://localhost:8000/api`
 | POST | `/api/login` | No |
 | POST | `/api/logout` | Yes |
 | GET | `/api/me` | Yes |
-| GET/POST | `/api/conversations` | Yes |
+| GET/POST | `/api/conversations` | Yes (`?search=` on list) |
 | GET/PATCH/DELETE | `/api/conversations/{id}` | Yes |
-| POST | `/api/conversations/{id}/messages` | Yes (JSON or `multipart` with optional `attachment`) |
+| POST | `/api/conversations/{id}/messages` | Yes — JSON `stream: true` for SSE chat replies |
+| PATCH | `/api/conversations/{id}/messages/{message}` | Yes — edit user message (+ optional stream) |
+| POST | `/api/conversations/{id}/messages/{message}/regenerate` | Yes |
+| POST | `/api/forgot-password`, `/api/reset-password` | No |
+| POST | `/api/billing/razorpay/order`, `.../verify` | Yes (when Razorpay configured) |
+| GET | `/api/admin/analytics` | Admin |
 
 Gemini calls run only in `app/Services/GeminiService.php` using `GEMINI_API_KEY` from `.env`. Image mode uses `GEMINI_IMAGE_MODEL` (default `gemini-2.5-flash-image`). Run `php artisan storage:link` once so generated images are served from `/storage`.
 
@@ -83,7 +88,10 @@ Open: `http://localhost:5173`
 - Free users get **3 prompts** by default (`FREE_PROMPT_LIMIT` in `backend/.env`), including **Create image** mode. Change to `2` if you want a 2-prompt trial.
 - After the limit, the UI shows a **credit limit** popup and blocks new messages until upgrade.
 - **Payment plans** page: `/plans` — Gemini-style tiers with **+20% platform fee** (`BILLING_MARKUP_PERCENT`).
-- `POST /api/billing/subscribe` (demo) activates the selected plan without a real payment gateway.
+- `POST /api/billing/subscribe` (demo) activates the selected plan when Razorpay keys are not set.
+- With `RAZORPAY_KEY_ID` + `RAZORPAY_KEY_SECRET`, `/plans` opens Razorpay checkout and verifies payment server-side.
+- Streaming chat, conversation search, usage dashboard (`/usage`), regenerate/edit messages, password reset, email verification, admin analytics, and per-user message rate limiting (`MESSAGE_RATE_LIMIT_PER_MINUTE`).
+- **Gen Z layer:** installable PWA, personas per chat, slash commands (`/eli5`, `/code`, …), voice input/listen, share reply + PNG share cards, daily streaks & weekly recap (`GET /api/experience`).
 - **Starter** (`gemini_starter`): chat only, capped prompts (`STARTER_CHAT_LIMIT`, default 100), no images. **Pro / Team**: unlimited chat + images.
 
 API: `GET /api/usage`, `GET /api/billing/plans`, `POST /api/billing/subscribe`.

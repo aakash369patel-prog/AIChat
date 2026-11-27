@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Support\StreamsAssistantReply;
 use App\Models\Conversation;
 use App\Services\GeminiService;
+use App\Services\PersonaService;
+use App\Services\StreakService;
 use App\Services\UsageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -14,12 +18,16 @@ use Throwable;
 
 class MessageController extends Controller
 {
+    use StreamsAssistantReply;
+
     public function store(
         Request $request,
         Conversation $conversation,
         GeminiService $gemini,
         UsageService $usage,
-    ): JsonResponse {
+        PersonaService $personas,
+        StreakService $streaks,
+    ): JsonResponse|StreamedResponse {
         if ($conversation->user_id !== $request->user()->id) {
             abort(403, 'Unauthorized.');
         }
@@ -27,6 +35,7 @@ class MessageController extends Controller
         $validated = $request->validate([
             'content' => ['nullable', 'string', 'max:10000'],
             'mode' => ['sometimes', 'string', 'in:chat,image'],
+            'stream' => ['sometimes', 'boolean'],
             'attachment' => [
                 'nullable',
                 'file',
@@ -95,6 +104,9 @@ class MessageController extends Controller
 
         $conversation->touch();
 
+        $user = $streaks->recordChatDay($request->user());
+        $systemInstruction = $personas->systemInstructionForConversation($conversation);
+
         try {
             if ($mode === 'image') {
                 if ($attachmentMime && ! Str::startsWith($attachmentMime, 'image/')) {
@@ -122,7 +134,19 @@ class MessageController extends Controller
                     ->where('content_type', 'text')
                     ->orderBy('created_at')
                     ->get();
-                $assistantText = $gemini->generateReply($history);
+
+                if ($request->boolean('stream') && ! $hasAttachment) {
+                    return $this->streamAssistantReply(
+                        $request,
+                        $conversation,
+                        $gemini,
+                        $usage,
+                        $history,
+                        $userMessage,
+                    );
+                }
+
+                $assistantText = $gemini->generateReply($history, $systemInstruction);
 
                 $assistantMessage = $conversation->messages()->create([
                     'role' => 'assistant',
@@ -144,7 +168,7 @@ class MessageController extends Controller
             'user_message' => $userMessage,
             'assistant_message' => $assistantMessage,
             'conversation' => $conversation->fresh(),
-            'usage' => $usage->summary($request->user()),
+            'usage' => $usage->summary($user),
         ]);
     }
 }

@@ -1,12 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { applySlashCommand, slashSuggestion } from '../utils/slashCommands'
+import { downloadShareCard, shareReplyNative } from '../utils/shareCard'
+import {
+  createSpeechRecognizer,
+  speakText,
+  speechRecognitionAvailable,
+  stopSpeaking,
+} from '../utils/voice'
 
 const SUGGESTIONS = [
-  'Explain quantum computing in simple terms',
-  'Help me write a professional email',
-  'Give me 5 creative dinner ideas',
-  'Debug this code step by step',
+  '/eli5 how blockchain works',
+  '/caption my weekend hiking photo idea',
+  '/code a Python password strength checker',
+  '/tldr climate change basics',
 ]
 
 export default function ChatPanel({
@@ -22,13 +30,22 @@ export default function ChatPanel({
   mode,
   onModeChange,
   onOpenSidebar,
+  onRegenerate,
+  onEditMessage,
+  personas = [],
+  slashCommands = [],
+  personaId,
+  onPersonaChange,
 }) {
   const [input, setInput] = useState('')
   const [attachment, setAttachment] = useState(null)
   const [attachmentPreview, setAttachmentPreview] = useState(null)
+  const [listening, setListening] = useState(false)
+  const [voiceError, setVoiceError] = useState('')
   const bottomRef = useRef(null)
   const fileInputRef = useRef(null)
   const textareaRef = useRef(null)
+  const recognizerRef = useRef(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -78,12 +95,53 @@ export default function ChatPanel({
     e.preventDefault()
     const text = input.trim()
     if ((!text && !attachment) || sending) return
+
+    const slash = applySlashCommand(text, slashCommands)
+    if (slash.needsMore) {
+      setVoiceError(`Add your prompt after ${slash.command?.command || 'the command'}.`)
+      return
+    }
+
+    const outbound = slash.content?.trim() || text
     if (!guestMode) {
       setInput('')
     }
-    onSend(text, mode, attachment)
+    setVoiceError('')
+    onSend(outbound, mode, attachment)
     clearAttachment()
   }
+
+  const toggleListen = () => {
+    setVoiceError('')
+    if (listening) {
+      recognizerRef.current?.stop?.()
+      setListening(false)
+      return
+    }
+
+    const recognition = createSpeechRecognizer({
+      onResult: (transcript, isFinal) => {
+        if (transcript) setInput(transcript)
+        if (isFinal) setListening(false)
+      },
+      onError: (code) => {
+        setVoiceError(code === 'not-allowed' ? 'Microphone permission denied.' : 'Voice input failed.')
+        setListening(false)
+      },
+      onEnd: () => setListening(false),
+    })
+
+    if (!recognition) {
+      setVoiceError('Voice input is not supported in this browser.')
+      return
+    }
+
+    recognizerRef.current = recognition
+    setListening(true)
+    recognition.start()
+  }
+
+  const slashHint = slashSuggestion(input, slashCommands)
 
   const isImageMode = mode === 'image'
   const canSubmit = Boolean(input.trim() || attachment)
@@ -111,6 +169,11 @@ export default function ChatPanel({
             {usage.plan_name || 'Pro'} · Unlimited
           </span>
         )}
+        {usage?.streak?.current_streak_days > 0 && (
+          <span className="rounded-full bg-orange-500/15 px-2 py-1 text-[11px] font-medium text-orange-200">
+            🔥 {usage.streak.current_streak_days}d
+          </span>
+        )}
       </header>
 
       <div className="chat-scroll flex-1 overflow-y-auto">
@@ -130,11 +193,29 @@ export default function ChatPanel({
 
         {messages.length > 0 && (
           <div className="mx-auto w-full max-w-3xl px-4 py-6 md:px-6">
-            {messages.map((message) => (
-              <MessageRow key={message.id} message={message} />
-            ))}
+            {(() => {
+              const lastAssistantId = [...messages]
+                .reverse()
+                .find((m) => m.role === 'assistant' && !m.streaming)?.id
+              const lastUserId = [...messages]
+                .reverse()
+                .find((m) => m.role === 'user' && !m.attachment_url)?.id
 
-            {sending && (
+              return messages.map((message) => (
+                <MessageRow
+                  key={message.id}
+                  message={message}
+                  isLastAssistant={message.id === lastAssistantId}
+                  isLastUser={message.id === lastUserId}
+                onRegenerate={onRegenerate}
+                onEditMessage={onEditMessage}
+                sending={sending}
+                conversationTitle={conversationTitle}
+              />
+            ))
+            })()}
+
+            {sending && !messages.some((m) => m.streaming) && (
               <div className="animate-message-in flex gap-4 py-4">
                 <AssistantAvatar />
                 <div className="flex min-h-[2.5rem] items-center pt-1">
@@ -156,6 +237,15 @@ export default function ChatPanel({
         )}
 
         <form onSubmit={handleSubmit} className="mx-auto max-w-3xl">
+          {!guestMode && personas.length > 0 && (
+            <PersonaStrip
+              personas={personas}
+              value={personaId}
+              onChange={onPersonaChange}
+              disabled={sending}
+            />
+          )}
+
           <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
             <ModeToggle
               mode={mode}
@@ -182,6 +272,14 @@ export default function ChatPanel({
             />
           )}
 
+          {slashHint && (
+            <p className="mb-2 px-2 text-xs text-emerald-300/90">
+              {slashHint.command} — {slashHint.label}
+            </p>
+          )}
+
+          {voiceError && <p className="mb-2 px-2 text-xs text-amber-300/90">{voiceError}</p>}
+
           <div className="flex items-end gap-1 rounded-[1.75rem] border border-[var(--chat-border)] bg-[var(--chat-surface-elevated)] p-2 shadow-[var(--composer-shadow)] transition focus-within:border-emerald-500/40">
             <input
               ref={fileInputRef}
@@ -200,6 +298,22 @@ export default function ChatPanel({
             >
               <PaperclipIcon className="h-5 w-5" />
             </button>
+            {speechRecognitionAvailable() && !guestMode && mode !== 'image' && (
+              <button
+                type="button"
+                disabled={inputDisabled}
+                onClick={toggleListen}
+                className={`mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition disabled:opacity-40 ${
+                  listening
+                    ? 'bg-red-500/20 text-red-300'
+                    : 'text-[var(--chat-text-muted)] hover:bg-zinc-700/60 hover:text-white'
+                }`}
+                title={listening ? 'Stop listening' : 'Voice input'}
+                aria-label="Voice input"
+              >
+                <MicIcon className="h-5 w-5" />
+              </button>
+            )}
             <textarea
               ref={textareaRef}
               rows={1}
@@ -347,15 +461,58 @@ function ModeToggle({ mode, onChange, disabled, allowsImage }) {
   )
 }
 
-function MessageRow({ message }) {
-  const isUser = message.role === 'user'
-  if (isUser) {
-    return <UserMessage message={message} />
-  }
-  return <AssistantMessage message={message} />
+function PersonaStrip({ personas, value, onChange, disabled }) {
+  return (
+    <div className="mb-2 flex gap-2 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {personas.map((persona) => (
+        <button
+          key={persona.id}
+          type="button"
+          disabled={disabled}
+          onClick={() => onChange?.(persona.id)}
+          className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 ${
+            value === persona.id
+              ? 'border-emerald-500/60 bg-emerald-600/20 text-emerald-200'
+              : 'border-[var(--chat-border)] bg-[var(--chat-surface)] text-[var(--chat-text-muted)] hover:text-white'
+          }`}
+        >
+          {persona.emoji} {persona.name}
+        </button>
+      ))}
+    </div>
+  )
 }
 
-function UserMessage({ message }) {
+function MessageRow({
+  message,
+  isLastAssistant,
+  isLastUser,
+  onRegenerate,
+  onEditMessage,
+  sending,
+  conversationTitle,
+}) {
+  const isUser = message.role === 'user'
+  if (isUser) {
+    return (
+      <UserMessage
+        message={message}
+        canEdit={isLastUser && !sending}
+        onEdit={() => onEditMessage?.(message)}
+      />
+    )
+  }
+  return (
+    <AssistantMessage
+      message={message}
+      canRegenerate={isLastAssistant && message.content_type === 'text' && !sending}
+      onRegenerate={() => onRegenerate?.(message)}
+      conversationTitle={conversationTitle}
+    />
+  )
+}
+
+function UserMessage({ message, canEdit, onEdit }) {
   const textContent =
     message.content && message.content !== '[Attachment]'
       ? message.content
@@ -387,14 +544,26 @@ function UserMessage({ message }) {
           </div>
         )}
         {textContent && <p className="whitespace-pre-wrap">{textContent}</p>}
+        {canEdit && (
+          <div className="mt-2 flex justify-end">
+            <button
+              type="button"
+              onClick={onEdit}
+              className="text-xs text-emerald-400 hover:text-emerald-300"
+            >
+              Edit
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-function AssistantMessage({ message }) {
+function AssistantMessage({ message, canRegenerate, onRegenerate, conversationTitle }) {
   const isImage = message.content_type === 'image' && message.image_url
   const [copied, setCopied] = useState(false)
+  const [shareBusy, setShareBusy] = useState(false)
 
   const textContent =
     message.content && message.content !== '[Attachment]'
@@ -414,6 +583,46 @@ function AssistantMessage({ message }) {
     }
   }
 
+  const handleShare = async () => {
+    if (!textContent || shareBusy) return
+    setShareBusy(true)
+    try {
+      const result = await shareReplyNative({
+        title: conversationTitle || 'AI Chat',
+        content: textContent,
+      })
+      if (result === 'copied') {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setShareBusy(false)
+    }
+  }
+
+  const handleShareCard = async () => {
+    if (!textContent || shareBusy) return
+    setShareBusy(true)
+    try {
+      await downloadShareCard({
+        title: conversationTitle || 'AI Chat highlight',
+        content: textContent,
+      })
+    } catch {
+      /* ignore */
+    } finally {
+      setShareBusy(false)
+    }
+  }
+
+  const handleListen = () => {
+    if (!textContent) return
+    stopSpeaking()
+    speakText(textContent)
+  }
+
   return (
     <div className="group animate-message-in flex gap-3 border-b border-[var(--chat-border-subtle)]/50 py-5 last:border-b-0">
       <AssistantAvatar />
@@ -431,7 +640,7 @@ function AssistantMessage({ message }) {
           </>
         )}
         {!isImage && textContent && (
-          <div className="mt-2 flex gap-1 opacity-0 transition group-hover:opacity-100">
+          <div className="mt-2 flex flex-wrap gap-1 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">
             <button
               type="button"
               onClick={handleCopy}
@@ -440,6 +649,41 @@ function AssistantMessage({ message }) {
               <CopyIcon className="h-3.5 w-3.5" />
               {copied ? 'Copied' : 'Copy'}
             </button>
+            <button
+              type="button"
+              onClick={handleListen}
+              className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-[var(--chat-text-muted)] hover:bg-[var(--chat-surface-elevated)] hover:text-white"
+            >
+              Listen
+            </button>
+            <button
+              type="button"
+              disabled={shareBusy}
+              onClick={handleShare}
+              className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-[var(--chat-text-muted)] hover:bg-[var(--chat-surface-elevated)] hover:text-white"
+            >
+              Share
+            </button>
+            <button
+              type="button"
+              disabled={shareBusy}
+              onClick={handleShareCard}
+              className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-[var(--chat-text-muted)] hover:bg-[var(--chat-surface-elevated)] hover:text-white"
+            >
+              Card
+            </button>
+            {canRegenerate && (
+              <button
+                type="button"
+                onClick={onRegenerate}
+                className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-[var(--chat-text-muted)] hover:bg-[var(--chat-surface-elevated)] hover:text-white"
+              >
+                Regenerate
+              </button>
+            )}
+            {message.streaming && (
+              <span className="px-2 py-1 text-xs text-emerald-400/80">Streaming…</span>
+            )}
           </div>
         )}
       </div>
@@ -562,6 +806,19 @@ function CloseIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  )
+}
+
+function MicIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 18.75a6.75 6.75 0 006.75-6.75V9.75a6.75 6.75 0 00-13.5 0v2.25a6.75 6.75 0 006.75 6.75z"
+      />
+      <path strokeLinecap="round" d="M12 18.75V21M8.25 21h7.5" />
     </svg>
   )
 }

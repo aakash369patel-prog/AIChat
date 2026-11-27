@@ -4,6 +4,7 @@ import api from '../api/axios'
 import { useAuth } from '../context/AuthContext'
 
 const TABS = [
+  { id: 'analytics', label: 'Analytics' },
   { id: 'users', label: 'Users' },
   { id: 'ai', label: 'AI credentials' },
   { id: 'account', label: 'My account' },
@@ -14,7 +15,7 @@ const inputClass =
 
 export default function AdminPanelPage() {
   const { user, refreshUser } = useAuth()
-  const [tab, setTab] = useState('users')
+  const [tab, setTab] = useState('analytics')
 
   return (
     <div className="min-h-full bg-[var(--chat-bg)] text-[var(--chat-text)]">
@@ -50,10 +51,72 @@ export default function AdminPanelPage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-8">
+        {tab === 'analytics' && <AnalyticsSection />}
         {tab === 'users' && <UsersSection />}
         {tab === 'ai' && <AiSettingsSection />}
         {tab === 'account' && <AccountSection user={user} refreshUser={refreshUser} />}
       </main>
+    </div>
+  )
+}
+
+function AnalyticsSection() {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    api
+      .get('/admin/analytics')
+      .then((res) => setData(res.data.analytics))
+      .catch(() => setError('Could not load analytics.'))
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) {
+    return <p className="text-slate-400">Loading analytics…</p>
+  }
+
+  if (error) {
+    return <p className="text-red-300">{error}</p>
+  }
+
+  const plans = data?.subscribers_by_plan || {}
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Total users" value={data?.users_total} />
+        <StatCard label="Verified emails" value={data?.users_verified} />
+        <StatCard label="Signups (7d)" value={data?.signups_last_7_days} />
+        <StatCard label="Messages today" value={data?.messages_today} />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard label="Conversations" value={data?.conversations_total} />
+        <StatCard label="Images (30d)" value={data?.image_messages_last_30_days} />
+        <div className="rounded-xl border border-[var(--chat-border)] bg-[var(--chat-surface)] p-4">
+          <p className="text-xs uppercase tracking-wide text-slate-500">Subscribers by plan</p>
+          <ul className="mt-3 space-y-1 text-sm text-slate-200">
+            {Object.keys(plans).length === 0 && <li className="text-slate-500">No active subscriptions</li>}
+            {Object.entries(plans).map(([planId, count]) => (
+              <li key={planId} className="flex justify-between">
+                <span>{planId}</span>
+                <span className="font-medium">{count}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      <p className="text-xs text-slate-500">Updated {data?.generated_at || '—'}</p>
+    </div>
+  )
+}
+
+function StatCard({ label, value }) {
+  return (
+    <div className="rounded-xl border border-[var(--chat-border)] bg-[var(--chat-surface)] p-4">
+      <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-white">{value ?? '—'}</p>
     </div>
   )
 }

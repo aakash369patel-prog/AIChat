@@ -3,11 +3,26 @@ import { Link, useNavigate } from 'react-router-dom'
 import api from '../api/axios'
 import { useAuth } from '../context/AuthContext'
 
+function loadRazorpayScript() {
+  return new Promise((resolve, reject) => {
+    if (window.Razorpay) {
+      resolve()
+      return
+    }
+    const script = document.createElement('script')
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error('Could not load Razorpay checkout.'))
+    document.body.appendChild(script)
+  })
+}
+
 export default function PaymentPlansPage() {
   const navigate = useNavigate()
   const { user, refreshUser } = useAuth()
   const [plans, setPlans] = useState([])
   const [markupPercent, setMarkupPercent] = useState(20)
+  const [razorpayEnabled, setRazorpayEnabled] = useState(false)
   const [loading, setLoading] = useState(true)
   const [subscribing, setSubscribing] = useState(null)
   const [error, setError] = useState('')
@@ -18,12 +33,13 @@ export default function PaymentPlansPage() {
       .then((res) => {
         setPlans(res.data.plans)
         setMarkupPercent(res.data.markup_percent ?? 20)
+        setRazorpayEnabled(Boolean(res.data.razorpay_enabled))
       })
       .catch(() => setError('Could not load plans.'))
       .finally(() => setLoading(false))
   }, [])
 
-  const handleSubscribe = async (planId) => {
+  const handleDemoSubscribe = async (planId) => {
     setError('')
     setSubscribing(planId)
     try {
@@ -34,6 +50,63 @@ export default function PaymentPlansPage() {
       setError(err.response?.data?.message || 'Subscription failed. Try again.')
     } finally {
       setSubscribing(null)
+    }
+  }
+
+  const handleRazorpayCheckout = async (plan) => {
+    setError('')
+    setSubscribing(plan.id)
+    try {
+      await loadRazorpayScript()
+      const orderRes = await api.post('/billing/razorpay/order', { plan_id: plan.id })
+      const checkout = orderRes.data.checkout
+
+      const rzp = new window.Razorpay({
+        key: checkout.key_id,
+        amount: checkout.amount,
+        currency: checkout.currency,
+        name: 'AI Chat Board',
+        description: `${checkout.plan_name} plan`,
+        order_id: checkout.order_id,
+        handler: async (response) => {
+          try {
+            await api.post('/billing/razorpay/verify', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            })
+            await refreshUser()
+            navigate('/', { replace: true, state: { subscribed: true } })
+          } catch (err) {
+            setError(err.response?.data?.message || 'Payment verification failed.')
+          } finally {
+            setSubscribing(null)
+          }
+        },
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || '',
+        },
+        theme: { color: '#059669' },
+      })
+
+      rzp.on('payment.failed', () => {
+        setError('Payment was cancelled or failed.')
+        setSubscribing(null)
+      })
+
+      rzp.open()
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Checkout failed.')
+      setSubscribing(null)
+    }
+  }
+
+  const handleSelect = (plan) => {
+    if (razorpayEnabled) {
+      handleRazorpayCheckout(plan)
+    } else {
+      handleDemoSubscribe(plan.id)
     }
   }
 
@@ -84,15 +157,17 @@ export default function PaymentPlansPage() {
                 markupPercent={markupPercent}
                 disabled={Boolean(user?.is_subscribed)}
                 loading={subscribing === plan.id}
-                onSelect={() => handleSubscribe(plan.id)}
+                razorpayEnabled={razorpayEnabled}
+                onSelect={() => handleSelect(plan)}
               />
             ))}
           </div>
         )}
 
         <p className="mt-8 text-center text-xs text-slate-500">
-          Demo checkout: selecting a plan activates subscription in the app without a real payment
-          gateway. Integrate Razorpay (or Stripe INR) here for production.
+          {razorpayEnabled
+            ? 'Secure checkout powered by Razorpay. Demo subscribe is disabled while keys are configured.'
+            : 'Demo checkout: set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in backend .env for live payments.'}
         </p>
       </div>
     </div>
@@ -107,7 +182,7 @@ function formatInr(amount) {
   }).format(amount)
 }
 
-function PlanCard({ plan, markupPercent, disabled, loading, onSelect }) {
+function PlanCard({ plan, markupPercent, disabled, loading, razorpayEnabled, onSelect }) {
   return (
     <div className="flex flex-col rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-lg">
       <h2 className="text-lg font-semibold text-white">{plan.name}</h2>
@@ -131,7 +206,15 @@ function PlanCard({ plan, markupPercent, disabled, loading, onSelect }) {
         onClick={onSelect}
         className="mt-6 w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-medium text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {loading ? 'Activating...' : disabled ? 'Current plan active' : 'Subscribe'}
+        {loading
+          ? razorpayEnabled
+            ? 'Opening checkout…'
+            : 'Activating…'
+          : disabled
+            ? 'Current plan active'
+            : razorpayEnabled
+              ? 'Pay with Razorpay'
+              : 'Subscribe (demo)'}
       </button>
     </div>
   )

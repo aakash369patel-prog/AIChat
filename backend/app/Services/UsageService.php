@@ -7,12 +7,29 @@ use App\Models\User;
 
 class UsageService
 {
+    public function __construct(
+        private readonly StreakService $streaks,
+    ) {}
     public function promptCount(User $user): int
     {
         return Message::query()
             ->where('role', 'user')
             ->whereHas('conversation', fn ($q) => $q->where('user_id', $user->id))
             ->count();
+    }
+
+    public function imageCount(User $user): int
+    {
+        return Message::query()
+            ->where('role', 'assistant')
+            ->where('content_type', 'image')
+            ->whereHas('conversation', fn ($q) => $q->where('user_id', $user->id))
+            ->count();
+    }
+
+    public function conversationCount(User $user): int
+    {
+        return $user->conversations()->count();
     }
 
     public function freeLimit(): int
@@ -100,12 +117,19 @@ class UsageService
             'is_subscribed' => (bool) $user->is_subscribed,
             'subscribed_plan' => $user->subscribed_plan,
             'plan_name' => $plan['name'] ?? null,
+            'subscribed_at' => $user->subscribed_at?->toIso8601String(),
+            'member_since' => $user->created_at?->toIso8601String(),
+            'email_verified' => $user->hasVerifiedEmail(),
             'prompts_used' => $used,
             'prompts_limit' => $limit,
             'prompts_remaining' => $this->remaining($user),
+            'images_generated' => $this->imageCount($user),
+            'conversations_count' => $this->conversationCount($user),
             'allows_image' => $this->canUseImage($user),
             'is_unlimited' => $user->is_subscribed && $limit === null,
             'credit_limit_reached' => ! $this->canSendPrompt($user),
+            'free_tier' => ! $user->is_subscribed,
+            'streak' => $this->streaks->summary($user),
         ];
     }
 }
