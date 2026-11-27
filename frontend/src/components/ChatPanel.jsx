@@ -107,7 +107,7 @@ export default function ChatPanel({
           <UsagePill usage={usage} onUpgradeClick={onUpgradeClick} />
         )}
         {usage?.is_unlimited && (
-          <span className="hidden rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-medium text-emerald-300 sm:inline">
+          <span className="hidden rounded-full bg-violet-500/15 px-2.5 py-1 text-[11px] font-medium text-violet-300 sm:inline">
             {usage.plan_name || 'Pro'} · Unlimited
           </span>
         )}
@@ -182,7 +182,7 @@ export default function ChatPanel({
             />
           )}
 
-          <div className="flex items-end gap-1 rounded-[1.75rem] border border-[var(--chat-border)] bg-[var(--chat-surface-elevated)] p-2 shadow-[var(--composer-shadow)] transition focus-within:border-emerald-500/40">
+          <div className="flex items-end gap-1 rounded-[1.75rem] border border-[var(--chat-border)] bg-[var(--chat-surface-elevated)] p-2 shadow-[var(--composer-shadow)] transition focus-within:border-violet-500/40">
             <input
               ref={fileInputRef}
               type="file"
@@ -220,7 +220,7 @@ export default function ChatPanel({
             <button
               type="submit"
               disabled={inputDisabled || !canSubmit}
-              className="mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white transition hover:bg-emerald-500 disabled:bg-zinc-700 disabled:text-zinc-500"
+              className="mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-600 text-white transition hover:bg-violet-500 disabled:bg-zinc-700 disabled:text-zinc-500"
               aria-label={isImageMode ? 'Create image' : 'Send message'}
             >
               <SendIcon className="h-4 w-4" />
@@ -254,7 +254,7 @@ function UsagePill({ usage, onUpgradeClick }) {
       ) : (
         <span className="inline-flex h-1.5 w-16 overflow-hidden rounded-full bg-zinc-800 sm:hidden">
           <span
-            className="h-full rounded-full bg-emerald-500"
+            className="h-full rounded-full bg-violet-500"
             style={{
               width: `${Math.min(100, (usage.prompts_used / usage.prompts_limit) * 100)}%`,
             }}
@@ -268,8 +268,8 @@ function UsagePill({ usage, onUpgradeClick }) {
 function EmptyState({ guestMode, isImageMode, onPickSuggestion }) {
   return (
     <div className="mx-auto flex min-h-[min(70vh,32rem)] max-w-2xl flex-col items-center justify-center px-6 py-12 text-center">
-      <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/15 to-teal-600/15 ring-1 ring-emerald-500/25">
-        <AppIcon className="h-7 w-7 text-emerald-400" />
+      <div className="brand-icon-wrap mb-6 flex h-14 w-14 items-center justify-center rounded-2xl">
+        <AppIcon className="h-7 w-7 text-violet-400" />
       </div>
       <h3 className="text-2xl font-semibold tracking-tight text-[var(--chat-text)]">
         How can I help you today?
@@ -286,7 +286,7 @@ function EmptyState({ guestMode, isImageMode, onPickSuggestion }) {
               key={text}
               type="button"
               onClick={() => onPickSuggestion(text)}
-              className="rounded-2xl border border-[var(--chat-border)] bg-[var(--chat-surface)] px-4 py-3.5 text-left text-sm text-[var(--chat-text-muted)] transition hover:border-emerald-500/35 hover:bg-[var(--chat-surface-elevated)] hover:text-[var(--chat-text)]"
+              className="rounded-2xl border border-[var(--chat-border)] bg-[var(--chat-surface)] px-4 py-3.5 text-left text-sm text-[var(--chat-text-muted)] transition hover:border-violet-500/35 hover:bg-[var(--chat-surface-elevated)] hover:text-[var(--chat-text)]"
             >
               {text}
             </button>
@@ -336,7 +336,7 @@ function ModeToggle({ mode, onChange, disabled, allowsImage }) {
           onClick={() => onChange?.(opt.id)}
           className={`rounded-full px-3 py-1 font-medium transition disabled:opacity-50 ${
             mode === opt.id
-              ? 'bg-emerald-600 text-white shadow-sm'
+              ? 'bg-violet-600 text-white shadow-sm'
               : 'text-[var(--chat-text-muted)] hover:text-[var(--chat-text)]'
           }`}
         >
@@ -379,7 +379,7 @@ function UserMessage({ message }) {
                 href={message.attachment_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-emerald-400 underline"
+                className="text-violet-400 underline"
               >
                 View attachment
               </a>
@@ -450,10 +450,10 @@ function AssistantMessage({ message }) {
 function AssistantAvatar() {
   return (
     <div
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-600/20 ring-1 ring-emerald-500/25"
+      className="brand-icon-wrap flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
       aria-hidden
     >
-      <AppIcon className="h-4 w-4 text-emerald-400" />
+      <AppIcon className="h-4 w-4 text-violet-400" />
     </div>
   )
 }
@@ -477,12 +477,12 @@ function AppIcon({ className }) {
 
 function ThinkingDots({ label }) {
   return (
-    <div className="flex items-center gap-2.5 text-sm text-emerald-400/90">
+    <div className="flex items-center gap-2.5 text-sm text-violet-400/90">
       <span className="flex gap-1">
         {[0, 1, 2].map((i) => (
           <span
             key={i}
-            className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-400"
+            className="h-1.5 w-1.5 animate-bounce rounded-full bg-violet-400"
             style={{ animationDelay: `${i * 140}ms` }}
           />
         ))}
@@ -521,7 +521,7 @@ function AttachmentBlock({ message }) {
           href={message.attachment_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-emerald-400 underline hover:text-emerald-300"
+          className="text-violet-400 underline hover:text-violet-300"
         >
           View attachment
         </a>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import ThemeToggle from './ThemeToggle'
 
 export default function Sidebar({
   conversations,
@@ -76,9 +77,9 @@ export default function Sidebar({
           <button
             type="button"
             onClick={handleNewChat}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--chat-border)] bg-[var(--chat-surface-elevated)] px-3 py-2.5 text-sm font-medium text-[var(--chat-text)] transition hover:border-emerald-500/50 hover:bg-[#1a2420]"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--chat-border)] bg-[var(--chat-surface-elevated)] px-3 py-2.5 text-sm font-medium text-[var(--chat-text)] transition hover:border-violet-500/50 hover:bg-[var(--chat-accent-surface)]"
           >
-            <PlusIcon className="h-4 w-4 text-emerald-400" />
+            <PlusIcon className="h-4 w-4 text-violet-400" />
             New chat
           </button>
         </div>
@@ -103,7 +104,7 @@ export default function Sidebar({
                         if (e.key === 'Enter') submitRename(conversation.id)
                         if (e.key === 'Escape') setEditingId(null)
                       }}
-                      className="mb-2 w-full rounded-lg border border-[var(--chat-border)] bg-[var(--chat-bg)] px-2 py-1.5 text-sm text-white outline-none focus:border-emerald-500"
+                      className="mb-2 w-full rounded-lg border border-[var(--chat-border)] bg-[var(--chat-bg)] px-2 py-1.5 text-sm text-white outline-none focus:border-violet-500"
                       autoFocus
                     />
                     <RemoteSaveCancel
@@ -126,6 +127,9 @@ export default function Sidebar({
         </div>
 
         <div className="border-t border-[var(--chat-border-subtle)] p-3">
+          <div className="mb-3 flex justify-center">
+            <ThemeToggle />
+          </div>
           {isGuest ? (
             <div className="space-y-2">
               <p className="px-1 text-[11px] uppercase tracking-wide text-[var(--chat-text-muted)]">
@@ -134,7 +138,7 @@ export default function Sidebar({
               <Link
                 to="/login"
                 state={{ from: '/' }}
-                className="flex w-full items-center justify-center rounded-xl bg-emerald-600 py-2.5 text-center text-sm font-medium text-white transition hover:bg-emerald-500"
+                className="flex w-full items-center justify-center rounded-xl bg-violet-600 py-2.5 text-center text-sm font-medium text-white transition hover:bg-violet-500"
               >
                 Sign in
               </Link>
@@ -148,7 +152,7 @@ export default function Sidebar({
           ) : (
             <div className="space-y-2">
               <div className="flex items-center gap-3 rounded-xl px-2 py-2">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-600 to-teal-700 text-sm font-semibold text-white">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-700 text-sm font-semibold text-white">
                   {initial}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -158,7 +162,7 @@ export default function Sidebar({
               </div>
               <Link
                 to="/plans"
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--chat-border)] py-2 text-xs font-medium text-[var(--chat-text-muted)] transition hover:border-emerald-500/40 hover:text-emerald-300"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--chat-border)] py-2 text-xs font-medium text-[var(--chat-text-muted)] transition hover:border-violet-500/40 hover:text-violet-300"
               >
                 Upgrade plan
               </Link>
@@ -197,8 +201,8 @@ function SectionLabel({ label }) {
 
 function BrandMark() {
   return (
-    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-600/20 ring-1 ring-emerald-500/30">
-      <AppIcon className="h-4 w-4 text-emerald-400" />
+    <div className="brand-icon-wrap flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
+      <AppIcon className="h-4 w-4 text-violet-400" />
     </div>
   )
 }
@@ -242,7 +246,7 @@ function RemoteSaveCancel({ onSave, onCancel }) {
       <button
         type="button"
         onClick={onSave}
-        className="flex-1 rounded-lg bg-emerald-600 py-1.5 text-xs font-medium text-white"
+        className="flex-1 rounded-lg bg-violet-600 py-1.5 text-xs font-medium text-white"
       >
         Save
       </button>

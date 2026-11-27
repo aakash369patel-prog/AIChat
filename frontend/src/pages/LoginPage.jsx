@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import ThemeToggle from '../components/ThemeToggle'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -31,13 +32,19 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-full items-center justify-center bg-[var(--chat-bg)] px-4">
-      <div className="w-full max-w-md rounded-2xl border border-[var(--chat-border)] bg-[var(--chat-surface)] p-8 shadow-2xl shadow-black/40">
-        <h1 className="mb-2 text-2xl font-semibold text-white">AI Chat Board</h1>
-        <p className="mb-6 text-sm text-slate-400">Sign in to continue chatting</p>
+    <div className="relative flex min-h-full items-center justify-center bg-[var(--chat-bg)] px-4">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle />
+      </div>
+      <div
+        className="w-full max-w-md rounded-2xl border border-[var(--chat-border)] bg-[var(--chat-surface)] p-8"
+        style={{ boxShadow: 'var(--chat-card-shadow)' }}
+      >
+        <h1 className="mb-2 text-2xl font-semibold text-[var(--chat-text)]">AI Chat Board</h1>
+        <p className="mb-6 text-sm text-[var(--chat-text-muted)]">Sign in to continue chatting</p>
 
         {from === '/' && (
-          <p className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
+          <p className="mb-4 rounded-lg border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-sm text-violet-200">
             Sign in is required to send messages and save your chats.
           </p>
         )}
@@ -50,37 +57,37 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm text-slate-300">Email</label>
+            <label className="mb-1 block text-sm text-[var(--chat-text-muted)]">Email</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-emerald-500"
+              className="chat-field"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm text-slate-300">Password</label>
+            <label className="mb-1 block text-sm text-[var(--chat-text-muted)]">Password</label>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-emerald-500"
+              className="chat-field"
             />
           </div>
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-lg bg-emerald-600 py-2.5 font-medium text-white transition hover:bg-emerald-500 disabled:opacity-60"
+            className="w-full rounded-lg bg-violet-600 py-2.5 font-medium text-white transition hover:bg-violet-500 disabled:opacity-60"
           >
             {submitting ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-400">
+        <p className="mt-6 text-center text-sm text-[var(--chat-text-muted)]">
           No account?{' '}
-          <Link to="/register" className="text-emerald-400 hover:text-emerald-300">
+          <Link to="/register" className="text-violet-400 hover:text-violet-300">
             Register
           </Link>
         </p>

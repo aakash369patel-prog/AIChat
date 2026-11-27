@@ -40,7 +40,7 @@ export default function CreditLimitModal({ open, onClose, usage }) {
           <button
             type="button"
             onClick={goToPlans}
-            className="flex-1 rounded-lg bg-emerald-600 py-2.5 text-sm font-medium text-white hover:bg-emerald-500"
+            className="flex-1 rounded-lg bg-violet-600 py-2.5 text-sm font-medium text-white hover:bg-violet-500"
           >
             View payment plans
           </button>

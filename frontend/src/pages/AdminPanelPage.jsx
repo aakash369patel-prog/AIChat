@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../api/axios'
 import { useAuth } from '../context/AuthContext'
+import ThemeToggle from '../components/ThemeToggle'
 
 const TABS = [
   { id: 'users', label: 'Users' },
@@ -9,8 +10,7 @@ const TABS = [
   { id: 'account', label: 'My account' },
 ]
 
-const inputClass =
-  'w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-emerald-500'
+const inputClass = 'chat-field'
 
 export default function AdminPanelPage() {
   const { user, refreshUser } = useAuth()
@@ -24,12 +24,15 @@ export default function AdminPanelPage() {
             <h1 className="text-xl font-semibold text-white">Admin panel</h1>
             <p className="text-sm text-slate-400">Manage users, subscriptions, and AI credentials</p>
           </div>
-          <Link
-            to="/"
-            className="rounded-lg border border-[var(--chat-border)] px-4 py-2 text-sm text-slate-300 transition hover:border-emerald-500/40 hover:text-white"
-          >
-            Back to chat
-          </Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle compact />
+            <Link
+              to="/"
+              className="rounded-lg border border-[var(--chat-border)] px-4 py-2 text-sm text-[var(--chat-text-muted)] transition hover:border-violet-500/40 hover:text-[var(--chat-text)]"
+            >
+              Back to chat
+            </Link>
+          </div>
         </div>
         <nav className="mx-auto flex max-w-6xl gap-1 px-4 pb-3">
           {TABS.map((item) => (
@@ -39,7 +42,7 @@ export default function AdminPanelPage() {
               onClick={() => setTab(item.id)}
               className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
                 tab === item.id
-                  ? 'bg-emerald-600 text-white'
+                  ? 'bg-violet-600 text-white'
                   : 'text-slate-400 hover:bg-[var(--chat-surface-elevated)] hover:text-white'
               }`}
             >
@@ -159,7 +162,7 @@ function UsersSection() {
           />
           <button
             type="submit"
-            className="shrink-0 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+            className="shrink-0 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500"
           >
             Search
           </button>
@@ -199,7 +202,7 @@ function UsersSection() {
                         <button
                           type="button"
                           onClick={() => startEdit(u)}
-                          className="text-emerald-400 hover:text-emerald-300"
+                          className="text-violet-400 hover:text-violet-300"
                         >
                           Edit
                         </button>
@@ -257,7 +260,7 @@ function UsersSection() {
           <div className="flex gap-2 pt-2">
             <button
               type="submit"
-              className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+              className="flex-1 rounded-lg bg-violet-600 py-2 text-sm font-medium text-white hover:bg-violet-500"
             >
               {editing ? 'Save changes' : 'Create user'}
             </button>
@@ -341,7 +344,7 @@ function AiSettingsSection() {
       )}
 
       {message && (
-        <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
+        <div className="mb-4 rounded-lg border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-sm text-violet-200">
           {message}
         </div>
       )}
@@ -372,7 +375,7 @@ function AiSettingsSection() {
         <button
           type="submit"
           disabled={saving}
-          className="rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-60"
+          className="rounded-lg bg-violet-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-violet-500 disabled:opacity-60"
         >
           {saving ? 'Saving…' : 'Save credentials'}
         </button>
@@ -425,7 +428,7 @@ function AccountSection({ user, refreshUser }) {
     <section className="max-w-md rounded-2xl border border-[var(--chat-border)] bg-[var(--chat-surface)] p-6">
       <h2 className="mb-4 text-lg font-medium text-white">Admin account</h2>
       {message && (
-        <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
+        <div className="mb-4 rounded-lg border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-sm text-violet-200">
           {message}
         </div>
       )}
@@ -454,7 +457,7 @@ function AccountSection({ user, refreshUser }) {
         />
         <button
           type="submit"
-          className="rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-emerald-500"
+          className="rounded-lg bg-violet-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-violet-500"
         >
           Save account
         </button>
